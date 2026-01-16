@@ -138,6 +138,7 @@ enum PlayerCommand {
         track: bool,
     },
     EmitAutoPlayChangedEvent(bool),
+    EmitQueueChangedEvent(String),
 }
 
 #[derive(Debug, Clone)]
@@ -247,6 +248,10 @@ pub enum PlayerEvent {
     },
     FilterExplicitContentChanged {
         filter: bool,
+    },
+    /// Fired when a track is added to the queue by a remote device.
+    QueueChanged {
+        track_uri: String,
     },
 }
 
@@ -646,6 +651,10 @@ impl Player {
 
     pub fn emit_auto_play_changed_event(&self, auto_play: bool) {
         self.command(PlayerCommand::EmitAutoPlayChangedEvent(auto_play));
+    }
+
+    pub fn emit_queue_changed_event(&self, track_uri: String) {
+        self.command(PlayerCommand::EmitQueueChangedEvent(track_uri));
     }
 }
 
@@ -2303,6 +2312,10 @@ impl PlayerInternal {
                 self.send_event(PlayerEvent::AutoPlayChanged { auto_play })
             }
 
+            PlayerCommand::EmitQueueChangedEvent(track_uri) => {
+                self.send_event(PlayerEvent::QueueChanged { track_uri })
+            }
+
             PlayerCommand::EmitSessionClientChangedEvent {
                 client_id,
                 client_name,
@@ -2535,6 +2548,10 @@ impl fmt::Debug for PlayerCommand {
             PlayerCommand::EmitAutoPlayChangedEvent(auto_play) => f
                 .debug_tuple("EmitAutoPlayChangedEvent")
                 .field(&auto_play)
+                .finish(),
+            PlayerCommand::EmitQueueChangedEvent(track_uri) => f
+                .debug_tuple("EmitQueueChangedEvent")
+                .field(&track_uri)
                 .finish(),
         }
     }

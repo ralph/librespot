@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - [connect] Add method `add_to_queue` to `Spirc` to add a track to the queue
+- [playback] Add `PlayerEvent::QueueChanged` event, emitted when a remote device adds a track to the queue
 
 ### Changed
 

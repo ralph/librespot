@@ -1074,7 +1074,11 @@ impl SpircTask {
                 self.handle_repeat_context(repeat_context.value)?
             }
             SetRepeatingTrack(repeat_track) => self.handle_repeat_track(repeat_track.value),
-            AddToQueue(add_to_queue) => self.connect_state.add_to_queue(add_to_queue.track, true),
+            AddToQueue(add_to_queue) => {
+                let uri = add_to_queue.track.uri.clone();
+                self.connect_state.add_to_queue(add_to_queue.track, true);
+                self.player.emit_queue_changed_event(uri);
+            }
             SetQueue(set_queue) => self.connect_state.handle_set_queue(set_queue),
             SetOptions(set_options) => {
                 if let Some(repeat_context) = set_options.repeating_context {
