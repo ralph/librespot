@@ -639,8 +639,54 @@ impl SpircTask {
             false
         };
 
+        // Fire context loaded event if context was successfully loaded
+        if update_state {
+            self.emit_context_loaded_event();
+        }
+
         self.context_resolver.remove_used_and_invalid();
         update_state
+    }
+
+    /// Emit context loaded event via PlayerEvent
+    fn emit_context_loaded_event(&self) {
+        let context_uri = self.connect_state.context_uri().clone();
+        let state_player = self.connect_state.player();
+
+        // Extract current track info
+        let current_track = state_player.track.as_ref();
+        let current_track_uri = current_track.map(|t| t.uri.clone());
+        let current_track_provider = current_track.map(|t| t.provider.clone());
+
+        // Extract next tracks
+        let next_track_uris: Vec<String> =
+            state_player.next_tracks.iter().map(|t| t.uri.clone()).collect();
+        let next_track_providers: Vec<String> =
+            state_player.next_tracks.iter().map(|t| t.provider.clone()).collect();
+
+        // Extract previous tracks
+        let prev_track_uris: Vec<String> =
+            state_player.prev_tracks.iter().map(|t| t.uri.clone()).collect();
+        let prev_track_providers: Vec<String> =
+            state_player.prev_tracks.iter().map(|t| t.provider.clone()).collect();
+
+        debug!(
+            "emitting context loaded event: context={}, current={:?}, next={}, prev={}",
+            context_uri,
+            current_track_uri,
+            next_track_uris.len(),
+            prev_track_uris.len()
+        );
+
+        self.player.emit_context_loaded_event(
+            context_uri,
+            current_track_uri,
+            current_track_provider,
+            next_track_uris,
+            next_track_providers,
+            prev_track_uris,
+            prev_track_providers,
+        );
     }
 
     // todo: is the time_delta still necessary?

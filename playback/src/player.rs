@@ -139,6 +139,15 @@ enum PlayerCommand {
     },
     EmitAutoPlayChangedEvent(bool),
     EmitQueueChangedEvent(String),
+    EmitContextLoadedEvent {
+        context_uri: String,
+        current_track_uri: Option<String>,
+        current_track_provider: Option<String>,
+        next_track_uris: Vec<String>,
+        next_track_providers: Vec<String>,
+        prev_track_uris: Vec<String>,
+        prev_track_providers: Vec<String>,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -252,6 +261,16 @@ pub enum PlayerEvent {
     /// Fired when a track is added to the queue by a remote device.
     QueueChanged {
         track_uri: String,
+    },
+    /// Fired when a context (playlist, album, etc.) is loaded with its track list.
+    ContextLoaded {
+        context_uri: String,
+        current_track_uri: Option<String>,
+        current_track_provider: Option<String>,
+        next_track_uris: Vec<String>,
+        next_track_providers: Vec<String>,
+        prev_track_uris: Vec<String>,
+        prev_track_providers: Vec<String>,
     },
 }
 
@@ -655,6 +674,27 @@ impl Player {
 
     pub fn emit_queue_changed_event(&self, track_uri: String) {
         self.command(PlayerCommand::EmitQueueChangedEvent(track_uri));
+    }
+
+    pub fn emit_context_loaded_event(
+        &self,
+        context_uri: String,
+        current_track_uri: Option<String>,
+        current_track_provider: Option<String>,
+        next_track_uris: Vec<String>,
+        next_track_providers: Vec<String>,
+        prev_track_uris: Vec<String>,
+        prev_track_providers: Vec<String>,
+    ) {
+        self.command(PlayerCommand::EmitContextLoadedEvent {
+            context_uri,
+            current_track_uri,
+            current_track_provider,
+            next_track_uris,
+            next_track_providers,
+            prev_track_uris,
+            prev_track_providers,
+        });
     }
 }
 
@@ -2316,6 +2356,24 @@ impl PlayerInternal {
                 self.send_event(PlayerEvent::QueueChanged { track_uri })
             }
 
+            PlayerCommand::EmitContextLoadedEvent {
+                context_uri,
+                current_track_uri,
+                current_track_provider,
+                next_track_uris,
+                next_track_providers,
+                prev_track_uris,
+                prev_track_providers,
+            } => self.send_event(PlayerEvent::ContextLoaded {
+                context_uri,
+                current_track_uri,
+                current_track_provider,
+                next_track_uris,
+                next_track_providers,
+                prev_track_uris,
+                prev_track_providers,
+            }),
+
             PlayerCommand::EmitSessionClientChangedEvent {
                 client_id,
                 client_name,
@@ -2552,6 +2610,10 @@ impl fmt::Debug for PlayerCommand {
             PlayerCommand::EmitQueueChangedEvent(track_uri) => f
                 .debug_tuple("EmitQueueChangedEvent")
                 .field(&track_uri)
+                .finish(),
+            PlayerCommand::EmitContextLoadedEvent { context_uri, .. } => f
+                .debug_tuple("EmitContextLoadedEvent")
+                .field(&context_uri)
                 .finish(),
         }
     }
