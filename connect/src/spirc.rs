@@ -616,8 +616,39 @@ impl SpircTask {
             false
         };
 
+        // Fire context loaded event if context was successfully loaded
+        if update_state {
+            self.emit_context_loaded_event();
+        }
+
         self.context_resolver.remove_used_and_invalid();
         update_state
+    }
+
+    /// Emit context loaded event via PlayerEvent
+    fn emit_context_loaded_event(&self) {
+        let context_uri = self.connect_state.context_uri().clone();
+        let state_player = self.connect_state.player();
+
+        let current_track = state_player
+            .track
+            .as_ref()
+            .map(|t| (t.uri.clone(), t.provider.clone()));
+
+        let next_tracks: Vec<_> = state_player
+            .next_tracks
+            .iter()
+            .map(|t| (t.uri.clone(), t.provider.clone()))
+            .collect();
+
+        let prev_tracks: Vec<_> = state_player
+            .prev_tracks
+            .iter()
+            .map(|t| (t.uri.clone(), t.provider.clone()))
+            .collect();
+
+        self.player
+            .emit_context_loaded_event(context_uri, current_track, next_tracks, prev_tracks);
     }
 
     // todo: is the time_delta still necessary?
