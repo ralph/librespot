@@ -138,9 +138,16 @@ enum PlayerCommand {
         track: bool,
     },
     EmitAutoPlayChangedEvent(bool),
+    EmitAddedToQueueEvent(SpotifyUri),
     EmitSetQueueEvent {
         next_tracks: Vec<(String, String)>, // (uri, provider)
         prev_tracks: Vec<(String, String)>, // (uri, provider)
+    },
+    EmitContextLoadedEvent {
+        context_uri: String,
+        current_track: Option<(String, String)>, // (uri, provider)
+        next_tracks: Vec<(String, String)>,      // (uri, provider)
+        prev_tracks: Vec<(String, String)>,      // (uri, provider)
     },
 }
 
@@ -666,12 +673,31 @@ impl Player {
         self.command(PlayerCommand::EmitAutoPlayChangedEvent(auto_play));
     }
 
+    pub fn emit_added_to_queue_event(&self, track_id: SpotifyUri) {
+        self.command(PlayerCommand::EmitAddedToQueueEvent(track_id));
+    }
+
     pub fn emit_set_queue_event(
         &self,
         next_tracks: Vec<(String, String)>,
         prev_tracks: Vec<(String, String)>,
     ) {
         self.command(PlayerCommand::EmitSetQueueEvent {
+            next_tracks,
+            prev_tracks,
+        });
+    }
+
+    pub fn emit_context_loaded_event(
+        &self,
+        context_uri: String,
+        current_track: Option<(String, String)>,
+        next_tracks: Vec<(String, String)>,
+        prev_tracks: Vec<(String, String)>,
+    ) {
+        self.command(PlayerCommand::EmitContextLoadedEvent {
+            context_uri,
+            current_track,
             next_tracks,
             prev_tracks,
         });
@@ -2332,6 +2358,10 @@ impl PlayerInternal {
                 self.send_event(PlayerEvent::AutoPlayChanged { auto_play })
             }
 
+            PlayerCommand::EmitAddedToQueueEvent(track_id) => {
+                self.send_event(PlayerEvent::AddedToQueue { track_id })
+            }
+
             PlayerCommand::EmitContextLoadedEvent {
                 context_uri,
                 current_track,
@@ -2587,11 +2617,26 @@ impl fmt::Debug for PlayerCommand {
                 .debug_tuple("EmitAutoPlayChangedEvent")
                 .field(&auto_play)
                 .finish(),
+            PlayerCommand::EmitAddedToQueueEvent(track_id) => f
+                .debug_tuple("EmitAddedToQueueEvent")
+                .field(&track_id)
+                .finish(),
             PlayerCommand::EmitSetQueueEvent {
                 next_tracks,
                 prev_tracks,
             } => f
                 .debug_tuple("EmitSetQueueEvent")
+                .field(&next_tracks.len())
+                .field(&prev_tracks.len())
+                .finish(),
+            PlayerCommand::EmitContextLoadedEvent {
+                context_uri,
+                next_tracks,
+                prev_tracks,
+                ..
+            } => f
+                .debug_tuple("EmitContextLoadedEvent")
+                .field(&context_uri)
                 .field(&next_tracks.len())
                 .field(&prev_tracks.len())
                 .finish(),
