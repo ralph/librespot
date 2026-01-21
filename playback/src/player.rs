@@ -150,10 +150,6 @@ pub enum PlayerEvent {
     PlayRequestIdChanged {
         play_request_id: u64,
     },
-    SetQueue {
-        next_tracks: Vec<(String, String)>, // (uri, provider)
-        prev_tracks: Vec<(String, String)>, // (uri, provider)
-    },
     // Fired when the player is stopped (e.g. by issuing a "stop" command to the player).
     Stopped {
         play_request_id: u64,
@@ -228,6 +224,10 @@ pub enum PlayerEvent {
     },
     TrackChanged {
         audio_item: Box<AudioItem>,
+    },
+    SetQueue {
+        next_tracks: Vec<(String, String)>, // (uri, provider)
+        prev_tracks: Vec<(String, String)>, // (uri, provider)
     },
     SessionConnected {
         connection_id: String,
