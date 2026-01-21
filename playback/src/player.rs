@@ -138,16 +138,7 @@ enum PlayerCommand {
         track: bool,
     },
     EmitAutoPlayChangedEvent(bool),
-    EmitQueueChangedEvent(String),
-    EmitContextLoadedEvent {
-        context_uri: String,
-        current_track_uri: Option<String>,
-        current_track_provider: Option<String>,
-        next_track_uris: Vec<String>,
-        next_track_providers: Vec<String>,
-        prev_track_uris: Vec<String>,
-        prev_track_providers: Vec<String>,
-    },
+    EmitAddedToQueueEvent(SpotifyUri),
 }
 
 #[derive(Debug, Clone)]
@@ -155,6 +146,9 @@ pub enum PlayerEvent {
     // Play request id changed
     PlayRequestIdChanged {
         play_request_id: u64,
+    },
+    AddedToQueue {
+        track_id: SpotifyUri,
     },
     // Fired when the player is stopped (e.g. by issuing a "stop" command to the player).
     Stopped {
@@ -672,29 +666,8 @@ impl Player {
         self.command(PlayerCommand::EmitAutoPlayChangedEvent(auto_play));
     }
 
-    pub fn emit_queue_changed_event(&self, track_uri: String) {
-        self.command(PlayerCommand::EmitQueueChangedEvent(track_uri));
-    }
-
-    pub fn emit_context_loaded_event(
-        &self,
-        context_uri: String,
-        current_track_uri: Option<String>,
-        current_track_provider: Option<String>,
-        next_track_uris: Vec<String>,
-        next_track_providers: Vec<String>,
-        prev_track_uris: Vec<String>,
-        prev_track_providers: Vec<String>,
-    ) {
-        self.command(PlayerCommand::EmitContextLoadedEvent {
-            context_uri,
-            current_track_uri,
-            current_track_provider,
-            next_track_uris,
-            next_track_providers,
-            prev_track_uris,
-            prev_track_providers,
-        });
+    pub fn emit_added_to_queue_event(&self, track_id: SpotifyUri) {
+        self.command(PlayerCommand::EmitAddedToQueueEvent(track_id));
     }
 }
 
@@ -2406,6 +2379,10 @@ impl PlayerInternal {
                 self.auto_normalise_as_album = setting
             }
 
+            PlayerCommand::EmitAddedToQueueEvent(track_id) => {
+                self.send_event(PlayerEvent::AddedToQueue { track_id })
+            }
+
             PlayerCommand::EmitFilterExplicitContentChangedEvent(filter) => {
                 self.send_event(PlayerEvent::FilterExplicitContentChanged { filter });
 
@@ -2607,13 +2584,9 @@ impl fmt::Debug for PlayerCommand {
                 .debug_tuple("EmitAutoPlayChangedEvent")
                 .field(&auto_play)
                 .finish(),
-            PlayerCommand::EmitQueueChangedEvent(track_uri) => f
-                .debug_tuple("EmitQueueChangedEvent")
-                .field(&track_uri)
-                .finish(),
-            PlayerCommand::EmitContextLoadedEvent { context_uri, .. } => f
-                .debug_tuple("EmitContextLoadedEvent")
-                .field(&context_uri)
+            PlayerCommand::EmitAddedToQueueEvent(track_id) => f
+                .debug_tuple("EmitAddedToQueueEvent")
+                .field(&track_id)
                 .finish(),
         }
     }
