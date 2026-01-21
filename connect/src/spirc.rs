@@ -1114,14 +1114,23 @@ impl SpircTask {
                 self.handle_repeat_context(repeat_context.value)?
             }
             SetRepeatingTrack(repeat_track) => self.handle_repeat_track(repeat_track.value),
-            AddToQueue(add_to_queue) => {
-                let track = add_to_queue.track.clone();
-                self.connect_state.add_to_queue(add_to_queue.track, true);
-                if let Ok(uri) = SpotifyUri::from_uri(&track.uri) {
-                    self.player.emit_added_to_queue_event(uri);
-                }
+            AddToQueue(add_to_queue) => self.connect_state.add_to_queue(add_to_queue.track, true),
+            SetQueue(set_queue) => {
+                // Extract track data before consuming set_queue
+                let next_tracks: Vec<(String, String)> = set_queue
+                    .next_tracks
+                    .iter()
+                    .map(|t| (t.uri.clone(), t.provider.clone()))
+                    .collect();
+                let prev_tracks: Vec<(String, String)> = set_queue
+                    .prev_tracks
+                    .iter()
+                    .map(|t| (t.uri.clone(), t.provider.clone()))
+                    .collect();
+
+                self.connect_state.handle_set_queue(set_queue);
+                self.player.emit_set_queue_event(next_tracks, prev_tracks);
             }
-            SetQueue(set_queue) => self.connect_state.handle_set_queue(set_queue),
             SetOptions(set_options) => {
                 if let Some(repeat_context) = set_options.repeating_context {
                     self.handle_repeat_context(repeat_context)?
