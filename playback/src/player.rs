@@ -138,6 +138,10 @@ enum PlayerCommand {
         track: bool,
     },
     EmitAutoPlayChangedEvent(bool),
+    EmitSetQueueEvent {
+        next_tracks: Vec<(String, String)>, // (uri, provider)
+        prev_tracks: Vec<(String, String)>, // (uri, provider)
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -145,6 +149,10 @@ pub enum PlayerEvent {
     // Play request id changed
     PlayRequestIdChanged {
         play_request_id: u64,
+    },
+    SetQueue {
+        next_tracks: Vec<(String, String)>, // (uri, provider)
+        prev_tracks: Vec<(String, String)>, // (uri, provider)
     },
     // Fired when the player is stopped (e.g. by issuing a "stop" command to the player).
     Stopped {
@@ -646,6 +654,17 @@ impl Player {
 
     pub fn emit_auto_play_changed_event(&self, auto_play: bool) {
         self.command(PlayerCommand::EmitAutoPlayChangedEvent(auto_play));
+    }
+
+    pub fn emit_set_queue_event(
+        &self,
+        next_tracks: Vec<(String, String)>,
+        prev_tracks: Vec<(String, String)>,
+    ) {
+        self.command(PlayerCommand::EmitSetQueueEvent {
+            next_tracks,
+            prev_tracks,
+        });
     }
 }
 
@@ -2335,6 +2354,16 @@ impl PlayerInternal {
                 self.auto_normalise_as_album = setting
             }
 
+            PlayerCommand::EmitSetQueueEvent {
+                next_tracks,
+                prev_tracks,
+            } => {
+                self.send_event(PlayerEvent::SetQueue {
+                    next_tracks,
+                    prev_tracks,
+                })
+            }
+
             PlayerCommand::EmitFilterExplicitContentChangedEvent(filter) => {
                 self.send_event(PlayerEvent::FilterExplicitContentChanged { filter });
 
@@ -2535,6 +2564,14 @@ impl fmt::Debug for PlayerCommand {
             PlayerCommand::EmitAutoPlayChangedEvent(auto_play) => f
                 .debug_tuple("EmitAutoPlayChangedEvent")
                 .field(&auto_play)
+                .finish(),
+            PlayerCommand::EmitSetQueueEvent {
+                next_tracks,
+                prev_tracks,
+            } => f
+                .debug_tuple("EmitSetQueueEvent")
+                .field(&next_tracks.len())
+                .field(&prev_tracks.len())
                 .finish(),
         }
     }
