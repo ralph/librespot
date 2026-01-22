@@ -1520,6 +1520,8 @@ impl SpircTask {
             .connect_state
             .update_context(ctx, ContextType::Default)?;
 
+        self.emit_set_queue_event();
+
         Ok(())
     }
 
