@@ -258,6 +258,13 @@ pub enum PlayerEvent {
     FilterExplicitContentChanged {
         filter: bool,
     },
+    /// Fired when the queue is set or context is loaded with its track list.
+    SetQueue {
+        context_uri: String,
+        current_track: Option<(String, String)>, // (uri, provider)
+        next_tracks: Vec<(String, String)>,      // (uri, provider)
+        prev_tracks: Vec<(String, String)>,      // (uri, provider)
+    },
 }
 
 impl PlayerEvent {
@@ -2373,7 +2380,7 @@ impl PlayerInternal {
                 current_track,
                 next_tracks,
                 prev_tracks,
-            } => self.send_event(PlayerEvent::ContextLoaded {
+            } => self.send_event(PlayerEvent::SetQueue {
                 context_uri,
                 current_track,
                 next_tracks,
