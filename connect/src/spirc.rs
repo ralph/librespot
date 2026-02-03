@@ -1432,6 +1432,9 @@ impl SpircTask {
             self.handle_stop()
         }
 
+        // Emit queue event after load completes to ensure UI has complete queue data
+        self.emit_set_queue_event();
+
         Ok(())
     }
 
@@ -1726,10 +1729,13 @@ impl SpircTask {
 
         if has_next_track {
             self.add_autoplay_resolving_when_required();
-            self.load_track(continue_playing, 0)
+            self.load_track(continue_playing, 0)?;
+            self.emit_set_queue_event();
+            Ok(())
         } else {
             info!("Not playing next track because there are no more tracks left in queue.");
             self.handle_stop();
+            self.emit_set_queue_event();
             Ok(())
         }
     }
@@ -1748,6 +1754,7 @@ impl SpircTask {
                 }
                 Some(_) => self.load_track(self.connect_state.is_playing(), 0)?,
             }
+            self.emit_set_queue_event();
         } else {
             self.handle_seek(0);
         }
