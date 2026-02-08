@@ -1534,6 +1534,7 @@ async fn get_setup() -> Setup {
             initial_volume,
             disable_volume,
             volume_steps,
+            ..ConnectConfig::default()
         }
     };
 
