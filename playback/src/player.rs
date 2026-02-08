@@ -682,21 +682,6 @@ impl Player {
             prev_tracks,
         });
     }
-
-    pub fn emit_set_queue_event(
-        &self,
-        context_uri: String,
-        current_track: Option<(String, String)>,
-        next_tracks: Vec<(String, String)>,
-        prev_tracks: Vec<(String, String)>,
-    ) {
-        self.command(PlayerCommand::EmitSetQueueEvent {
-            context_uri,
-            current_track,
-            next_tracks,
-            prev_tracks,
-        });
-    }
 }
 
 impl Drop for Player {
@@ -2397,18 +2382,6 @@ impl PlayerInternal {
                 prev_tracks,
             }),
 
-            PlayerCommand::EmitSetQueueEvent {
-                context_uri,
-                current_track,
-                next_tracks,
-                prev_tracks,
-            } => self.send_event(PlayerEvent::SetQueue {
-                context_uri,
-                current_track,
-                next_tracks,
-                prev_tracks,
-            }),
-
             PlayerCommand::EmitFilterExplicitContentChangedEvent(filter) => {
                 self.send_event(PlayerEvent::FilterExplicitContentChanged { filter });
 
@@ -2609,17 +2582,6 @@ impl fmt::Debug for PlayerCommand {
             PlayerCommand::EmitAutoPlayChangedEvent(auto_play) => f
                 .debug_tuple("EmitAutoPlayChangedEvent")
                 .field(&auto_play)
-                .finish(),
-            PlayerCommand::EmitSetQueueEvent {
-                context_uri,
-                next_tracks,
-                prev_tracks,
-                ..
-            } => f
-                .debug_tuple("EmitSetQueueEvent")
-                .field(&context_uri)
-                .field(&next_tracks.len())
-                .field(&prev_tracks.len())
                 .finish(),
             PlayerCommand::EmitSetQueueEvent {
                 context_uri,
