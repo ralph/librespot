@@ -765,15 +765,20 @@ impl SpircTask {
             return Ok(());
         }
 
-        let is_current_track = matches! {
-            (event.get_play_request_id(), self.play_request_id),
-            (Some(event_id), Some(current_id)) if event_id == current_id
+        let is_current_track = match (event.get_play_request_id(), self.play_request_id) {
+            (Some(event_id), Some(current_id)) => event_id == current_id,
+            // If we haven't seen a PlayRequestIdChanged yet (e.g. Spirc was created
+            // while the Player was already playing a track), adopt the Player's
+            // current play_request_id so we stay in sync.
+            (Some(event_id), None) => {
+                self.play_request_id = Some(event_id);
+                true
+            }
+            _ => false,
         };
 
-        // we only process events if the play_request_id matches. If it doesn't, it is
-        // an event that belongs to a previous track and only arrives now due to a race
-        // condition. In this case we have updated the state already and don't want to
-        // mess with it.
+        // We only process events if the play_request_id matches. If it doesn't, it
+        // belongs to a previous track and only arrives now due to a race condition.
         if !is_current_track {
             return Ok(());
         }
@@ -1715,7 +1720,7 @@ impl SpircTask {
     }
 
     fn handle_next(&mut self, track_uri: Option<String>) -> Result<(), Error> {
-        let continue_playing = self.connect_state.is_playing();
+        let continue_playing = self.play_status.is_playing();
 
         let current_uri = self.connect_state.current_track(|t| &t.uri);
         let mut has_next_track =
@@ -1756,7 +1761,7 @@ impl SpircTask {
                     self.connect_state.reset_playback_to_position(None)?;
                     self.handle_stop()
                 }
-                Some(_) => self.load_track(self.connect_state.is_playing(), 0)?,
+                Some(_) => self.load_track(self.play_status.is_playing(), 0)?,
             }
         } else {
             self.handle_seek(0);
