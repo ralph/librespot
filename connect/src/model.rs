@@ -165,3 +165,14 @@ pub(super) enum SpircPlayStatus {
         preloading_of_next_track_triggered: bool,
     },
 }
+
+impl SpircPlayStatus {
+    /// Whether local playback intent is active (playing or loading-to-play).
+    ///
+    /// Unlike `ConnectState::is_playing()` which reflects the remote-facing
+    /// status, this checks the local play intent which remains correct during
+    /// loading transitions and reconnect + auto-resume scenarios.
+    pub fn is_playing(&self) -> bool {
+        matches!(self, Self::Playing { .. } | Self::LoadingPlay { .. })
+    }
+}
